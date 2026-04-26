@@ -1,6 +1,5 @@
 node_modules/
 .firebase/
-.firebaserc
 js/config.js
 
 # OS generated files
