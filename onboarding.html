@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MatDaan Mitra — Onboarding</title>
+  <meta name="description" content="Your personal election guide for Indian voters">
+  <link rel="stylesheet" href="./css/global.css">
+  <link rel="stylesheet" href="./css/components.css">
+  <style>
+    /* ===== ONBOARDING OVERHAUL ===== */
+    .ob-page {
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 24px;
+      background: linear-gradient(160deg, #0a1628 0%, #1a2a4a 40%, #0d2137 100%);
+      overflow: hidden; position: relative;
+    }
+
+    /* Floating ambient orbs */
+    .ob-page::before, .ob-page::after {
+      content: ''; position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.15;
+    }
+    .ob-page::before {
+      width: 400px; height: 400px; top: -100px; right: -100px;
+      background: var(--color-primary);
+    }
+    .ob-page::after {
+      width: 300px; height: 300px; bottom: -80px; left: -80px;
+      background: #4f8cff;
+    }
+
+    /* Step indicators */
+    .ob-stepper {
+      display: flex; align-items: center; gap: 0;
+      margin-bottom: 48px; position: relative; z-index: 1;
+    }
+    .ob-stepper__dot {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; font-family: var(--font-primary);
+      background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.3);
+      border: 2px solid rgba(255,255,255,0.1);
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative; z-index: 2;
+    }
+    .ob-stepper__dot--active {
+      background: linear-gradient(135deg, var(--color-primary), #ff9a5c);
+      color: #fff; border-color: transparent;
+      box-shadow: 0 0 20px rgba(255, 107, 53, 0.4);
+      transform: scale(1.15);
+    }
+    .ob-stepper__dot--done {
+      background: var(--color-secondary); color: #fff;
+      border-color: transparent;
+    }
+    .ob-stepper__line {
+      width: 40px; height: 2px;
+      background: rgba(255,255,255,0.1);
+      transition: background 0.5s ease;
+    }
+    .ob-stepper__line--done { background: var(--color-secondary); }
+
+    /* Main card */
+    .ob-card {
+      width: 100%; max-width: 480px;
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px; padding: 40px 32px;
+      text-align: center; position: relative; z-index: 1;
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+    }
+
+    .ob-card__icon {
+      font-size: 48px; margin-bottom: 16px;
+      animation: obBounce 2s ease infinite;
+    }
+    @keyframes obBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+    .ob-card__question {
+      font-family: var(--font-primary); font-size: clamp(20px, 4vw, 26px);
+      font-weight: 700; color: #fff; line-height: 1.3;
+      margin-bottom: 8px;
+    }
+    .ob-card__hint {
+      font-size: 14px; color: rgba(255,255,255,0.45);
+      margin-bottom: 28px;
+    }
+
+    /* Option buttons */
+    .ob-options { display: flex; flex-direction: column; gap: 12px; }
+    .ob-options--row { flex-direction: row; justify-content: center; }
+    .ob-opt {
+      padding: 16px 24px; border-radius: 14px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      color: #fff; font-size: 16px; font-weight: 600;
+      font-family: var(--font-primary);
+      cursor: pointer; transition: all 0.25s ease;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .ob-opt:hover, .ob-opt:focus-visible {
+      background: rgba(255, 107, 53, 0.15);
+      border-color: var(--color-primary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(255, 107, 53, 0.15);
+    }
+    .ob-opt__icon { font-size: 22px; flex-shrink: 0; }
+
+    /* Input fields */
+    .ob-input {
+      width: 100%; padding: 16px 20px; border-radius: 14px;
+      background: rgba(255,255,255,0.08);
+      border: 1.5px solid rgba(255,255,255,0.15);
+      color: #fff; font-size: 16px; font-family: var(--font-primary);
+      outline: none; transition: all 0.25s ease;
+      -webkit-appearance: none; appearance: none;
+    }
+    .ob-input::placeholder { color: rgba(255,255,255,0.3); }
+    .ob-input:focus {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.15);
+    }
+    .ob-input option { background: #1a2a4a; color: #fff; }
+
+    /* Continue button */
+    .ob-continue {
+      margin-top: 20px; width: 100%; padding: 16px;
+      border-radius: 14px; border: none; cursor: pointer;
+      background: linear-gradient(135deg, var(--color-primary), #ff9a5c);
+      color: #fff; font-size: 16px; font-weight: 700;
+      font-family: var(--font-primary);
+      box-shadow: 0 4px 20px rgba(255, 107, 53, 0.3);
+      transition: all 0.25s ease;
+    }
+    .ob-continue:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(255, 107, 53, 0.4); }
+    .ob-continue:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    /* Back button */
+    .ob-back {
+      position: absolute; top: 24px; left: 24px; z-index: 10;
+      background: rgba(255,255,255,0.08); border: none; color: rgba(255,255,255,0.6);
+      width: 40px; height: 40px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 18px; transition: all 0.2s ease;
+    }
+    .ob-back:hover { background: rgba(255,255,255,0.15); color: #fff; }
+
+    /* Footer */
+    .ob-footer {
+      margin-top: 32px; font-size: 12px;
+      color: rgba(255,255,255,0.25); text-align: center;
+      position: relative; z-index: 1;
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .ob-card { padding: 32px 20px; border-radius: 20px; }
+      .ob-stepper__line { width: 24px; }
+      .ob-stepper__dot { width: 32px; height: 32px; font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <main id="main-content" role="main" class="ob-page">
+    <!-- Back Button -->
+    <button class="ob-back" id="onboarding-back" aria-label="Go back to previous question" hidden>←</button>
+
+    <!-- Step Indicators -->
+    <div class="ob-stepper" id="ob-stepper" role="progressbar"
+         aria-valuenow="1" aria-valuemin="1" aria-valuemax="4" aria-label="Onboarding progress">
+      <div class="ob-stepper__dot ob-stepper__dot--active" data-step="1">1</div>
+      <div class="ob-stepper__line" data-line="1"></div>
+      <div class="ob-stepper__dot" data-step="2">2</div>
+      <div class="ob-stepper__line" data-line="2"></div>
+      <div class="ob-stepper__dot" data-step="3">3</div>
+      <div class="ob-stepper__line" data-line="3"></div>
+      <div class="ob-stepper__dot" data-step="4">4</div>
+    </div>
+
+    <!-- Card -->
+    <div class="ob-card" id="onboarding-card" aria-live="polite">
+      <div class="ob-card__icon" id="ob-icon" aria-hidden="true">🗳</div>
+      <h1 class="ob-card__question" id="question-text">Is this your first time voting?</h1>
+      <p class="ob-card__hint" id="ob-hint">This helps us personalise your experience</p>
+      <div class="ob-options" id="options-container" role="group" aria-label="Choose an answer">
+        <!-- Options injected by JS -->
+      </div>
+    </div>
+
+    <p class="ob-footer">🛡 Your data stays in your browser · Nothing is stored on any server</p>
+  </main>
+
+  <script src="./js/config.js" defer></script>
+  <script src="./js/session.js" defer></script>
+  <script src="./js/i18n.js" defer></script>
+  <script src="./js/translate.js" defer></script>
+  <script src="./js/gemini.js" defer></script>
+  <script src="./js/onboarding.js" defer></script>
+</body>
+</html>

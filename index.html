@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MatDaan Mitra — मतदान मित्र</title>
+  <meta name="description" content="Your personal election guide for Indian voters">
+  <link rel="stylesheet" href="./css/global.css">
+  <link rel="stylesheet" href="./css/components.css">
+  <style>
+    /* ===== SPLASH SCREEN ===== */
+    .splash {
+      position: fixed; inset: 0; z-index: 9999;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #0a1628 0%, #1a2a4a 40%, #0d2137 100%);
+      transition: opacity 0.8s ease, visibility 0.8s ease;
+    }
+    .splash--hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+    .splash__icon {
+      width: 80px; height: 80px; margin-bottom: 24px;
+      background: linear-gradient(135deg, var(--color-primary), #ff9a5c);
+      border-radius: 20px; display: flex; align-items: center; justify-content: center;
+      font-size: 40px; animation: splashPulse 1.5s ease infinite;
+      box-shadow: 0 8px 32px rgba(255, 107, 53, 0.3);
+    }
+    .splash__title {
+      font-family: var(--font-primary); font-size: clamp(28px, 6vw, 44px);
+      font-weight: 800; color: #fff; letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #fff 0%, #ff9a5c 50%, #FF6B35 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; animation: splashFadeUp 1s ease 0.3s both;
+    }
+    .splash__subtitle {
+      font-family: var(--font-primary); font-size: clamp(14px, 3vw, 18px);
+      color: rgba(255,255,255,0.6); margin-top: 12px;
+      animation: splashFadeUp 1s ease 0.6s both; letter-spacing: 2px; text-transform: uppercase;
+    }
+    .splash__loader {
+      margin-top: 40px; width: 120px; height: 3px;
+      background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;
+      animation: splashFadeUp 1s ease 0.9s both;
+    }
+    .splash__loader-bar {
+      width: 0%; height: 100%; border-radius: 4px;
+      background: linear-gradient(90deg, var(--color-primary), #ff9a5c);
+      animation: splashLoad 2s ease 1s forwards;
+    }
+    @keyframes splashPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+    @keyframes splashFadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes splashLoad { to { width: 100%; } }
+
+    /* ===== LANDING (LANGUAGE PICKER) ===== */
+    .landing {
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 24px;
+      background: linear-gradient(160deg, #f0f4ff 0%, #fdf6f0 50%, #fff5ee 100%);
+      opacity: 0; transition: opacity 0.6s ease;
+    }
+    .landing--visible { opacity: 1; }
+    .landing__badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 16px; border-radius: 999px;
+      background: rgba(255, 107, 53, 0.08); color: var(--color-primary);
+      font-size: 13px; font-weight: 600; margin-bottom: 16px;
+      animation: splashFadeUp 0.6s ease both;
+    }
+    .landing__heading {
+      font-size: clamp(28px, 5vw, 40px); font-weight: 800;
+      color: var(--color-text-primary); text-align: center;
+      line-height: 1.2; margin-bottom: 8px;
+      animation: splashFadeUp 0.6s ease 0.1s both;
+    }
+    .landing__sub {
+      font-size: clamp(15px, 3vw, 18px); color: var(--color-text-secondary);
+      text-align: center; margin-bottom: 40px; max-width: 400px;
+      animation: splashFadeUp 0.6s ease 0.2s both;
+    }
+    .lang-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 12px; width: 100%; max-width: 420px;
+      animation: splashFadeUp 0.6s ease 0.3s both;
+    }
+    @media (min-width: 480px) { .lang-grid { grid-template-columns: repeat(4, 1fr); } }
+    .lang-tile {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 6px; padding: 20px 12px; border-radius: 16px;
+      background: #fff; border: 2px solid transparent;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      cursor: pointer; transition: all 0.25s ease; position: relative; overflow: hidden;
+    }
+    .lang-tile:hover, .lang-tile:focus-visible {
+      border-color: var(--color-primary);
+      box-shadow: 0 4px 20px rgba(255, 107, 53, 0.15);
+      transform: translateY(-3px);
+    }
+    .lang-tile__script {
+      font-size: 28px; font-weight: 700; color: var(--color-primary);
+      line-height: 1; transition: transform 0.2s ease;
+    }
+    .lang-tile:hover .lang-tile__script { transform: scale(1.15); }
+    .lang-tile__native { font-size: 14px; font-weight: 600; color: var(--color-text-primary); }
+    .lang-tile__english { font-size: 11px; color: var(--color-text-muted); }
+    .landing__footer {
+      margin-top: 48px; font-size: 12px; color: var(--color-text-muted);
+      text-align: center; animation: splashFadeUp 0.6s ease 0.5s both;
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- ===== SPLASH SCREEN ===== -->
+  <div class="splash" id="splash-screen" role="status" aria-label="Loading MatDaan Mitra">
+    <div class="splash__icon" aria-hidden="true">🗳</div>
+    <h1 class="splash__title">MatDaan Mitra</h1>
+    <p class="splash__subtitle">Your Voting Companion</p>
+    <div class="splash__loader"><div class="splash__loader-bar"></div></div>
+  </div>
+
+  <!-- ===== LANGUAGE PICKER ===== -->
+  <main id="main-content" role="main" class="landing">
+    <span class="landing__badge">🇮🇳 Built for Indian Voters</span>
+    <h2 class="landing__heading">Choose Your<br>Language</h2>
+    <p class="landing__sub">Pick your preferred language. Everything in the app will be personalised for you.</p>
+
+    <div class="lang-grid" role="group" aria-label="Select Language">
+      <button class="lang-tile" aria-label="Select English" onclick="selectLanguage('en', 'English')">
+        <span class="lang-tile__script" aria-hidden="true">Aa</span>
+        <span class="lang-tile__native">English</span>
+        <span class="lang-tile__english">English</span>
+      </button>
+      <button class="lang-tile" aria-label="Select Hindi" onclick="selectLanguage('hi', 'हिन्दी')">
+        <span class="lang-tile__script" aria-hidden="true">अ</span>
+        <span class="lang-tile__native">हिन्दी</span>
+        <span class="lang-tile__english">Hindi</span>
+      </button>
+      <button class="lang-tile" aria-label="Select Bengali" onclick="selectLanguage('bn', 'বাংলা')">
+        <span class="lang-tile__script" aria-hidden="true">ক</span>
+        <span class="lang-tile__native">বাংলা</span>
+        <span class="lang-tile__english">Bengali</span>
+      </button>
+      <button class="lang-tile" aria-label="Select Tamil" onclick="selectLanguage('ta', 'தமிழ்')">
+        <span class="lang-tile__script" aria-hidden="true">த</span>
+        <span class="lang-tile__native">தமிழ்</span>
+        <span class="lang-tile__english">Tamil</span>
+      </button>
+      <button class="lang-tile" aria-label="Select Telugu" onclick="selectLanguage('te', 'తెలుగు')">
+        <span class="lang-tile__script" aria-hidden="true">అ</span>
+        <span class="lang-tile__native">తెలుగు</span>
+        <span class="lang-tile__english">Telugu</span>
+      </button>
+      <button class="lang-tile" aria-label="Select Punjabi" onclick="selectLanguage('pa', 'ਪੰਜਾਬੀ')">
+        <span class="lang-tile__script" aria-hidden="true">ਅ</span>
+        <span class="lang-tile__native">ਪੰਜਾਬੀ</span>
+        <span class="lang-tile__english">Punjabi</span>
+      </button>
+      <button class="lang-tile" aria-label="Select Kannada" onclick="selectLanguage('kn', 'ಕನ್ನಡ')">
+        <span class="lang-tile__script" aria-hidden="true">ಕ</span>
+        <span class="lang-tile__native">ಕನ್ನಡ</span>
+        <span class="lang-tile__english">Kannada</span>
+      </button>
+      <button class="lang-tile" aria-label="Select Malayalam" onclick="selectLanguage('ml', 'മലയാളം')">
+        <span class="lang-tile__script" aria-hidden="true">മ</span>
+        <span class="lang-tile__native">മലയാളം</span>
+        <span class="lang-tile__english">Malayalam</span>
+      </button>
+    </div>
+
+    <p class="landing__footer">🛡 Powered by Gemini AI · Politically Neutral · Zero Data Stored</p>
+  </main>
+
+  <script src="./js/config.js" defer></script>
+  <script src="./js/session.js" defer></script>
+  <script src="./js/i18n.js" defer></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        document.getElementById('splash-screen').classList.add('splash--hidden');
+        document.querySelector('.landing').classList.add('landing--visible');
+      }, 3000);
+    });
+
+    function selectLanguage(code, label) {
+      let isReturning = false;
+      if (typeof setSession === 'function') {
+        const session = getSession();
+        session.language = code;
+        session.languageLabel = label;
+        isReturning = session.onboardingComplete;
+        setSession(session);
+      } else {
+        sessionStorage.setItem('matdaan_session', JSON.stringify({ language: code, languageLabel: label }));
+      }
+
+      document.querySelector('.landing').style.opacity = '0';
+      setTimeout(() => {
+        window.location.href = isReturning ? './dashboard.html' : './onboarding.html';
+      }, 400);
+    }
+  </script>
+</body>
+</html>

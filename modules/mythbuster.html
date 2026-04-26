@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MatDaan Mitra — Myth vs Fact</title>
+  <meta name="description" content="Bust election misinformation">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/modules.css">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+  
+  <header role="banner" class="app-header">
+    <div class="app-header__logo">
+      <a href="../dashboard.html" style="text-decoration:none;">← MatDaan Mitra</a>
+    </div>
+    <div class="app-header__lang-toggle" aria-label="Current language">
+      <span id="current-lang-display">English</span>
+    </div>
+  </header>
+
+  <main id="main-content" role="main" class="module-container">
+    <header class="module-header" style="border-radius: var(--radius-lg); margin-bottom: var(--space-xl); background: var(--color-myth);">
+      <h1 data-i18n="module3_title">Myth vs Fact</h1>
+      <p data-i18n="module3_desc">Bust election misinformation</p>
+    </header>
+
+    <section class="mythbuster__input-section" aria-labelledby="myth-input-heading">
+      <h2 id="myth-input-heading">Type a claim you've heard</h2>
+      <p class="mythbuster__hint" style="color:var(--color-text-secondary); margin-bottom:var(--space-md);">Example: "Only educated people can vote" or "You need to re-register before every election"</p>
+
+      <div class="mythbuster__input-wrapper">
+        <label for="myth-input" class="sr-only">Enter an election claim to fact-check</label>
+        <textarea 
+          id="myth-input"
+          class="mythbuster__textarea"
+          placeholder="Type any claim about elections in India..."
+          maxlength="500"
+          rows="3"
+          aria-describedby="myth-input-counter"
+          aria-required="true"></textarea>
+        <span id="myth-input-counter" class="mythbuster__char-count" aria-live="polite">0 / 500</span>
+      </div>
+
+      <div class="mythbuster__quick-claims" id="myth-quick-claims" aria-label="Quick example claims">
+        <!-- Rendered by JS from EXAMPLE_MYTHS array -->
+      </div>
+
+      <button class="btn btn--primary btn--myth-check" 
+              id="myth-submit"
+              aria-label="Check this claim"
+              style="width: 100%;"
+              disabled>
+        Check this claim
+      </button>
+    </section>
+
+    <div id="verdict-container" aria-live="polite">
+      <!-- Verdict rendered here -->
+    </div>
+
+    <section class="myth-log" id="myth-log-section" hidden>
+      <h3 style="margin-bottom:var(--space-md);">Your fact-check history</h3>
+      <div id="myth-log-items"></div>
+    </section>
+  </main>
+
+  <!-- Floating Assistant -->
+  <button class="floating-assistant__trigger" id="assistant-trigger" aria-label="Open election assistant chat" aria-expanded="false" aria-controls="assistant-drawer">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z" fill="currentColor" opacity="0.9"/></svg>
+  </button>
+
+  <aside class="floating-assistant__drawer" id="assistant-drawer" role="dialog" aria-modal="true" aria-labelledby="assistant-drawer-title" aria-hidden="true">
+    <div class="floating-assistant__header">
+      <div class="floating-assistant__identity">
+        <div class="floating-assistant__avatar" aria-hidden="true">म</div>
+        <div>
+          <h2 class="floating-assistant__name" id="assistant-drawer-title">MatDaan Mitra</h2>
+          <p class="floating-assistant__status">Online · Ask me anything about elections</p>
+        </div>
+      </div>
+      <button class="floating-assistant__close" aria-label="Close assistant" onclick="closeAssistant()">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M15 5L5 15M5 5L15 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="floating-assistant__messages" id="assistant-messages" role="log" aria-live="polite"></div>
+    <div class="floating-assistant__input-area">
+      <textarea id="assistant-input" class="floating-assistant__input" placeholder="Ask about your voting rights..." rows="1" maxlength="300"></textarea>
+      <button class="floating-assistant__send" id="assistant-send" disabled>
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M16 9L2 2L5 9L2 16L16 9Z" fill="currentColor"/></svg>
+      </button>
+    </div>
+  </aside>
+  <div class="floating-assistant__backdrop" id="assistant-backdrop"></div>
+
+  <script src="../js/config.js" defer></script>
+  <script src="../js/session.js" defer></script>
+  <script src="../js/i18n.js" defer></script>
+  <script src="../js/language-switcher.js" defer></script>
+  <script src="../js/gemini.js" defer></script>
+  <script src="../js/mythbuster.js" defer></script>
+  <script src="../js/floating-assistant.js" defer></script>
+</body>
+</html>
