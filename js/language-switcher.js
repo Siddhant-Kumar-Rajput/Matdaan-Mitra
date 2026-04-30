@@ -79,6 +79,9 @@ function initLanguageSwitcher() {
     const sess = getSession();
     sess.language = code;
     sess.languageLabel = label;
+    // Clear caches to force re-fetch in new language
+    delete sess.cachedChecklist;
+    delete sess.cachedNews;
     setSession(sess);
 
     // Update the display text and close dropdown

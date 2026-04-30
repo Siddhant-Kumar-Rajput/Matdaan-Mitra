@@ -7,9 +7,18 @@
   <meta name="description" content="From announcement to results">
   <link rel="stylesheet" href="../css/global.css">
   <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/responsive.css">
   <link rel="stylesheet" href="../css/modules.css">
 </head>
 <body>
+  <script>
+    const session = JSON.parse(sessionStorage.getItem('matdaan_session') || '{}');
+    if (!session.language && window.location.pathname !== '/index.html' && window.location.pathname !== '/') {
+      window.location.replace('../index.html');
+    }
+    window.LANG = session.language || 'en';
+    document.documentElement.lang = window.LANG;
+  </script>
   <a href="#main-content" class="skip-link">Skip to main content</a>
   
   <header role="banner" class="app-header">
@@ -28,10 +37,10 @@
     </header>
 
     <!-- Tabs -->
-    <div style="display: flex; gap: var(--space-md); margin-bottom: var(--space-xl);">
-      <button class="btn btn--primary" id="tab-timeline" onclick="switchTab('timeline')">Timeline</button>
-      <button class="btn btn--ghost" id="tab-whatif" onclick="switchTab('whatif')">What if? Scenarios</button>
-      <button class="btn btn--ghost" id="tab-quiz" onclick="switchTab('quiz')">Take the Quiz</button>
+    <div class="timeline-tabs-wrapper">
+      <button class="pill-tab pill-tab--active" id="tab-timeline" onclick="switchTab('timeline')">Timeline</button>
+      <button class="pill-tab" id="tab-whatif" onclick="switchTab('whatif')">What if? Scenarios</button>
+      <button class="pill-tab" id="tab-quiz" onclick="switchTab('quiz')">Take the Quiz</button>
     </div>
 
     <!-- Timeline Tab -->
@@ -120,9 +129,11 @@
 
   <script src="../js/config.js" defer></script>
   <script src="../js/session.js" defer></script>
-  <script src="../js/i18n.js" defer></script>
-  <script src="../js/language-switcher.js" defer></script>
   <script src="../js/translate.js" defer></script>
+  <script src="../js/i18n.js" defer></script>
+  <script src="../js/loader.js" defer></script>
+  <script src="../js/offline-data.js" defer></script>
+  <script src="../js/language-switcher.js" defer></script>
   <script src="../js/gemini.js" defer></script>
   <script src="../js/timeline.js" defer></script>
   <script src="../js/floating-assistant.js" defer></script>

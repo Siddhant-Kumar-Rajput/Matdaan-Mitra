@@ -49,6 +49,19 @@ function setSession(newSession) {
 }
 
 /**
+ * Updates specific keys in the session, merging with latest storage state.
+ * Use this instead of setSession(localObj) to prevent overwriting background updates.
+ * @param {Object} updates - The keys to update
+ * @returns {Object} The new complete session
+ */
+function updateSession(updates) {
+  const current = getSession();
+  const updated = { ...current, ...updates };
+  setSession(updated);
+  return updated;
+}
+
+/**
  * Sleep utility for animations/delays.
  * @param {number} ms 
  * @returns {Promise<void>}

@@ -90,6 +90,9 @@
 .badge--MYTH { background: rgba(211, 47, 47, 0.15); color: var(--color-myth); }
 .badge--PARTIAL { background: rgba(245, 124, 0, 0.15); color: var(--color-partial); }
 .badge--OOS { background: rgba(140, 140, 140, 0.15); color: var(--color-text-muted); }
+.badge--HIGH { background: rgba(211, 47, 47, 0.15); color: var(--color-myth); }
+.badge--MEDIUM { background: rgba(245, 124, 0, 0.15); color: var(--color-partial); }
+.badge--LOW { background: rgba(56, 142, 60, 0.15); color: var(--color-fact); }
 
 .priority--high { color: var(--color-myth); font-weight: 700; font-size: var(--font-size-xs); text-transform: uppercase; }
 .priority--medium { color: var(--color-partial); font-weight: 700; font-size: var(--font-size-xs); text-transform: uppercase; }
@@ -502,3 +505,5 @@
   visibility: visible;
   pointer-events: auto;
 }
+
+

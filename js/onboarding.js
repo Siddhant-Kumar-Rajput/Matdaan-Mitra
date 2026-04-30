@@ -17,10 +17,10 @@ const STATES = [
 ];
 
 const STEP_CONFIG = [
-  { icon: '🗳', hint: 'This helps us personalise your experience' },
-  { icon: '📍', hint: 'We will show election info specific to your region' },
-  { icon: '🏙', hint: 'Enter your city, town, or constituency name' },
-  { icon: '🪪', hint: 'This determines your election-readiness checklist' }
+  { icon: '🗳', hintKey: 'q1_hint' },
+  { icon: '📍', hintKey: 'q2_hint' },
+  { icon: '🏙', hintKey: 'q3_hint' },
+  { icon: '🪪', hintKey: 'q4_hint' }
 ];
 
 let currentStep = 1;
@@ -89,11 +89,11 @@ async function renderStep(step) {
 
   const cfg = STEP_CONFIG[step - 1];
   iconEl.textContent = cfg.icon;
-  hintEl.textContent = cfg.hint;
+  hintEl.textContent = t(cfg.hintKey);
 
   if (step === 1) {
     backBtn.hidden = true;
-    questionEl.textContent = t('q1_text');
+    questionEl.textContent = t('q1');
     optionsContainer.className = 'ob-options';
     optionsContainer.innerHTML = `
       <button class="ob-opt" onclick="saveAnswerAndNext('isFirstTimeVoter', true)">
@@ -105,10 +105,10 @@ async function renderStep(step) {
     `;
   } else if (step === 2) {
     backBtn.hidden = false;
-    questionEl.textContent = t('q2_text');
+    questionEl.textContent = t('q2');
     optionsContainer.className = 'ob-options';
 
-    optionsContainer.innerHTML = `<p style="color: rgba(255,255,255,0.4); font-size:14px;">${t('loading') || 'Loading states...'}</p>`;
+    optionsContainer.innerHTML = `<p style="color: rgba(255,255,255,0.4); font-size:14px;">${t('loading_states')}</p>`;
 
     const session = getSession();
     const translatedStates = await translateTexts(STATES, session.language || 'en');
@@ -123,7 +123,7 @@ async function renderStep(step) {
     `;
   } else if (step === 3) {
     backBtn.hidden = false;
-    questionEl.textContent = t('q3_text');
+    questionEl.textContent = t('q3');
     optionsContainer.className = 'ob-options';
     optionsContainer.innerHTML = `
       <input type="text" id="constituency-input" class="ob-input" placeholder="${t('q3_placeholder')}" aria-label="Constituency or city" autocomplete="off">
@@ -135,7 +135,7 @@ async function renderStep(step) {
     }, 400);
   } else if (step === 4) {
     backBtn.hidden = false;
-    questionEl.textContent = t('q4_text');
+    questionEl.textContent = t('q4');
     optionsContainer.className = 'ob-options';
     optionsContainer.innerHTML = `
       <button class="ob-opt" onclick="saveAnswerAndNext('hasEpicCard', true)">
@@ -169,14 +169,12 @@ async function advanceToStep(nextStep, isBack = false) {
 
   // Validation: Skip Step 4 (EPIC card) if not a first-time voter
   if (nextStep === 4 && session.isFirstTimeVoter === false) {
-    session.hasEpicCard = true;
-    setSession(session);
+    updateSession({ hasEpicCard: true });
     nextStep = 5;
   }
 
   if (nextStep > 4) {
-    session.onboardingComplete = true;
-    setSession(session);
+    updateSession({ onboardingComplete: true });
     
     // Show finishing state
     const questionEl = document.getElementById('question-text');
@@ -184,29 +182,37 @@ async function advanceToStep(nextStep, isBack = false) {
     const iconEl = document.getElementById('ob-icon');
     const hintEl = document.getElementById('ob-hint');
     
-    iconEl.textContent = '🎊';
-    questionEl.textContent = t('onboarding_finishing') || 'Setting up your dashboard...';
-    hintEl.textContent = t('onboarding_finishing_hint') || 'Personalising your election guide';
-    optionsContainer.innerHTML = '<div class="typing-dot" style="margin: 0 auto;"></div>';
+    iconEl.textContent = '✨';
+    questionEl.textContent = t('onboarding_finishing') || 'Personalising your experience...';
+    hintEl.textContent = t('onboarding_finishing_hint') || 'Preparing your dashboard based on your profile';
     
-    // Pre-fetch checklist data if personalisation is enabled
-    try {
-      const prompt = `
-        Generate a personalised pre-election checklist for a voter in India:
-        - State: ${session.state}
-        - Constituency: ${session.constituency}
-        - First-time voter: ${session.isFirstTimeVoter}
-        - Has EPIC: ${session.hasEpicCard}
-        Respond ONLY with a JSON array of 5-8 checklist items.
-      `;
-      const checklist = await callGemini(prompt, 'checklist');
-      if (checklist) {
-        session.cachedChecklist = Array.isArray(checklist) ? checklist : (checklist.items || []);
-        setSession(session);
-      }
-    } catch (e) {
-      debugLog('Pre-fetch failed', e);
+    // Create a smooth pulsing animation
+    optionsContainer.innerHTML = `
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px 0; animation: floatSubtle 3s ease-in-out infinite;">
+        <div style="font-size: 48px; margin-bottom: 20px; animation: splashPulse 1.5s ease infinite;">✨</div>
+        <p style="color: var(--color-primary); font-size: 18px; font-weight: 700; margin-bottom: 16px; background: linear-gradient(90deg, var(--color-primary), #ff9a5c, var(--color-primary)); background-size: 200% auto; color: transparent; -webkit-background-clip: text; background-clip: text; animation: shimmerText 2s linear infinite;">Personalizing Matdaan Mitra for you</p>
+        <div class="loader__dots"><span></span><span></span><span></span></div>
+      </div>
+      <style>
+        @keyframes floatSubtle {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        @keyframes shimmerText {
+          to { background-position: 200% center; }
+        }
+      </style>
+    `;
+    
+    // Populate the offline checklist immediately so dashboard is ready
+    if (typeof getOfflineChecklist === 'function') {
+      const sess = getSession();
+      const checklist = await getOfflineChecklist(sess.language || 'en', sess);
+      updateSession({ cachedChecklist: checklist });
     }
+    
+    // Wait for the animation to play out
+    await sleep(2500);
 
     card.style.transform = 'scale(0.9)';
     card.style.opacity = '0';
@@ -242,9 +248,7 @@ async function advanceToStep(nextStep, isBack = false) {
  * @param {*} value - The value to save
  */
 function saveAnswerAndNext(key, value) {
-  const session = getSession();
-  session[key] = value;
-  setSession(session);
+  updateSession({ [key]: value });
   advanceToStep(currentStep + 1);
 }
 
@@ -261,8 +265,9 @@ function saveStateAndNext() {
 /**
  * Saves the constituency input and advances.
  */
-function saveConstituencyAndNext() {
+async function saveConstituencyAndNext() {
   const input = document.getElementById('constituency-input');
+  
   if (input.value.trim().length > 0) {
     const { sanitised, isRejected } = sanitiseInput(input.value);
     if (!isRejected) {
@@ -270,6 +275,7 @@ function saveConstituencyAndNext() {
       return;
     }
   }
+  
   input.classList.add('ob-input--error');
   input.focus();
   setTimeout(() => input.classList.remove('ob-input--error'), 600);

@@ -1,0 +1,15 @@
+# .gcloudignore
+# Keep js/config.js even if it's in .gitignore
+!js/config.js
+
+# Standard ignores
+.git/
+.gitignore
+node_modules/
+.firebase/
+.firebaserc
+firebase.json
+README.md
+PROJECT_SPECS.md
+AGENTS.md
+GEMINI.md

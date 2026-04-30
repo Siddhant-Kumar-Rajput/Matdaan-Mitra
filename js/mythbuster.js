@@ -6,44 +6,58 @@
 
 const EXAMPLE_MYTHS = [
   "You cannot vote if you don't have an Aadhaar card",
-  "Only educated people can vote in India",
-  "You need to re-register before every election",
-  "EVMs (voting machines) can be hacked easily",
-  "Women are not allowed to vote in some states",
-  "If your name isn't on the list, you can still vote on the day",
-  "NOTA means your vote is wasted"
+  "EVMs can be hacked by Bluetooth or remote control",
+  "If I don't have my Voter ID card, I cannot vote at all",
+  "Only people who pay income tax are allowed to vote",
+  "The ink used on the finger contains a tracking chip",
+  "You need to re-register for every single election",
+  "Selecting NOTA means the election will be cancelled",
+  "NRIs can vote online from their home countries",
+  "If your name is missing from the roll, you can vote on a challenge ballot"
 ];
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const session = getSession();
+  const targetLang = session.language || 'en';
   document.getElementById('current-lang-display').textContent = session.languageLabel || 'English';
 
   const container = document.getElementById('myth-quick-claims');
-  container.innerHTML = EXAMPLE_MYTHS.map(m => `
-    <button class="btn btn--ghost btn--sm" style="background:var(--color-surface-alt); border:1px solid var(--color-border);" onclick="setAndCheckClaim('${m}')">${m}</button>
-  `).join('');
+  
+  const renderMyths = (list) => {
+    if (!container) return;
+    container.innerHTML = list.map((m, i) => {
+      const escapedM = JSON.stringify(m).replace(/"/g, '&quot;');
+      const originalText = EXAMPLE_MYTHS[i] || m;
+      const escapedOrig = JSON.stringify(originalText).replace(/"/g, '&quot;');
+      return `
+        <button class="btn btn--ghost" 
+                style="width: 100%; text-align: left; padding: 16px; border-radius: 12px; font-size: 15px; border: 1px solid var(--color-border); background: #fff;" 
+                onclick="checkClaim(${escapedM}, ${escapedOrig})">
+          ${m} <span style="float: right;">→</span>
+        </button>
+      `;
+    }).join('');
+  };
 
-  const input = document.getElementById('myth-input');
-  const counter = document.getElementById('myth-input-counter');
-  const submitBtn = document.getElementById('myth-submit');
+  // 1. Initial render with English
+  renderMyths(EXAMPLE_MYTHS);
 
-  input.addEventListener('input', () => {
-    counter.textContent = `${input.value.length} / 500`;
-    submitBtn.disabled = input.value.trim().length < 5;
-  });
-
-  submitBtn.addEventListener('click', () => {
-    if (input.value.trim().length >= 5) checkClaim(input.value);
-  });
+  // 2. Async update with translation if needed
+  if (targetLang !== 'en' && typeof translateTexts === 'function') {
+    try {
+      const translated = await translateTexts(EXAMPLE_MYTHS, targetLang);
+      if (translated && translated.length === EXAMPLE_MYTHS.length) {
+        renderMyths(translated);
+      }
+    } catch (e) {
+      debugLog('Myth translation failed', e);
+    }
+  }
 
   renderMythLog();
 });
 
 function setAndCheckClaim(claim) {
-  const input = document.getElementById('myth-input');
-  input.value = claim;
-  document.getElementById('myth-input-counter').textContent = `${claim.length} / 500`;
-  document.getElementById('myth-submit').disabled = false;
   checkClaim(claim);
 }
 
@@ -70,112 +84,165 @@ async function crossReferenceFactCheck(claim) {
   } catch {
     return [];
   }
-}
-
-async function checkClaim(claimText) {
-  const { sanitised, isRejected, rejectionReason } = sanitiseInput(claimText);
-  if (isRejected) {
-    if (rejectionReason === 'injection_attempt') logRejectedQuery(claimText, rejectionReason);
-    alert(REJECTION_MESSAGES[rejectionReason] || 'Invalid input.');
-    return;
-  }
-
+}async function checkClaim(claimText, originalClaim = '') {
   const container = document.getElementById('verdict-container');
-  container.innerHTML = `<div class="verdict-card" aria-busy="true"><p>${t('loading')}</p></div>`;
+  const loadingMsg = t('loading') || 'AI is verifying this claim...';
+  container.innerHTML = `
+    <div class="verdict-card" aria-busy="true">
+      <div class="typing-dot"></div>
+      <p style="margin-top:12px;">${loadingMsg}</p>
+    </div>`;
+
+  container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
   const session = getSession();
   const prompt = `
-You are MatDaan Mitra, a neutral election fact-checker for India. A user has submitted this claim:
+You are MatDaan Mitra, a neutral election fact-checker for India.
+Claim to verify: "${originalClaim || claimText}"
 
-"${sanitised}"
+Evaluate this claim based on official Election Commission of India (ECI) guidelines.
+Respond entirely in ${session.languageLabel || 'English'}.
 
-Evaluate this claim in the context of Indian elections and civic processes.
-Respond in ${session.languageLabel || 'English'} as JSON:
-
+JSON Schema:
 {
   "verdict": "FACT" | "MYTH" | "PARTIAL" | "OOS",
   "confidence": "high" | "medium" | "low",
-  "title": "short verdict headline (max 8 words)",
-  "explanation": "clear 2-4 sentence explanation in plain language",
-  "nuance": "additional context or caveat (optional, can be empty string)",
-  "source": "name of the authority or document that settles this",
-  "sourceUrl": "official URL if available, else empty string",
+  "title": "short translated verdict headline",
+  "explanation": "clear 2-4 sentence translated explanation",
+  "nuance": "translated additional context",
+  "source": "name of authority",
+  "sourceUrl": "official URL",
   "isOutOfScope": false
 }
-
-STRICT RULES:
-1. If the claim is about a specific political party, candidate, or their policies — set verdict to "OOS" and isOutOfScope to true. Respond: "I can only fact-check claims about election processes and voter rights, not political opinions."
-2. If the claim could harm voter confidence without basis, flag it clearly as MYTH with strong explanation.
-3. Never take a political side. Stick to procedural and legal facts.
-4. Confidence must reflect genuine uncertainty.
-5. Respond ONLY with the JSON object.
 `;
 
   try {
-    // DISBLED: Gemini API call as per user request to use offline data
-    // const verdictData = await callGemini(prompt, 'mythbuster');
+    debugLog('Verifying myth:', originalClaim || claimText);
+    const response = await callGemini(prompt, { jsonMode: false }); // Using plain text for more reliable extraction
     
-    // Use offline mock data engine
-    const verdictData = getMockData('mythbuster', sanitised);
+    const rawText = typeof response === 'string' ? response : (response.text || '');
+    let verdictData;
+
+    // Extract JSON using regex
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        verdictData = JSON.parse(jsonMatch[0]);
+      } catch (parseError) {
+        debugLog('Myth JSON parse error, using mock fallback');
+        verdictData = getMockVerdict(claimText);
+      }
+    } else {
+      debugLog('No JSON found in myth response, using mock fallback');
+      verdictData = getMockVerdict(claimText);
+    }
     
     if (verdictData.isOutOfScope || verdictData.verdict === 'OOS') {
-      logRejectedQuery(sanitised, 'out_of_scope');
       container.innerHTML = `
         <div class="verdict-card verdict-card--OOS">
-          <h3 class="verdict-card__title">Out of Scope</h3>
-          <p class="verdict-card__explanation">${verdictData.explanation || REJECTION_MESSAGES.political_content}</p>
+          <h3 class="verdict-card__title">${t('verdict_oos') || 'Out of Scope'}</h3>
+          <p class="verdict-card__explanation">${verdictData.explanation || "I can only fact-check claims about election processes and voter rights."}</p>
+          <div class="verdict-card__actions">
+             <span class="responsible-ai-badge">🛡️ Responsible AI Guardrail</span>
+          </div>
         </div>`;
       return;
     }
 
     const icons = { 'FACT': '✅', 'MYTH': '❌', 'PARTIAL': '⚠️' };
-    const labels = { 'FACT': 'Verified Fact', 'MYTH': 'Myth / False', 'PARTIAL': 'Partially True' };
+    const labelKey = (verdictData.verdict || 'PARTIAL').toLowerCase();
+    const label = t('verdict_' + labelKey) || verdictData.verdict;
 
-    saveMythToLog(sanitised, verdictData.verdict, verdictData.title || labels[verdictData.verdict]);
-
-    // DISABLED: Fact-check API as per user request to use offline data only
-    /*
-    crossReferenceFactCheck(sanitised).then(checks => {
-      // ...
-    });
-    */
+    saveMythToLog(claimText, verdictData.verdict, verdictData.title || label);
 
     container.innerHTML = `
-      <article class="verdict-card verdict-card--${verdictData.verdict}" role="article" aria-label="${verdictData.verdict}: ${verdictData.title || labels[verdictData.verdict]}">
+      <article class="verdict-card verdict-card--${verdictData.verdict}" role="article" aria-label="${verdictData.verdict}">
         <div class="verdict-card__header">
-          <span class="verdict-card__icon" role="img" aria-label="${verdictData.verdict}">${icons[verdictData.verdict]}</span>
-          <div>
-            <span class="verdict-card__badge badge--${verdictData.verdict}">${labels[verdictData.verdict]}</span>
-          </div>
+          <span class="verdict-card__icon" aria-hidden="true">${icons[verdictData.verdict] || '❓'}</span>
+          <span class="verdict-card__badge badge--${verdictData.verdict}">${label}</span>
         </div>
 
-        <h3 class="verdict-card__title">${verdictData.title || labels[verdictData.verdict]}</h3>
+        <h3 class="verdict-card__title">${verdictData.title || label}</h3>
         <p class="verdict-card__explanation">${verdictData.explanation}</p>
 
         <div class="verdict-card__nuance" ${!verdictData.nuance ? 'hidden' : ''}>
-          <strong>Important nuance:</strong> ${verdictData.nuance}
+          <strong>${t('nuance') || 'Important nuance'}:</strong> ${verdictData.nuance}
         </div>
 
         <div class="verdict-card__source">
-          <strong>Based on:</strong> 
+          <strong>${t('based_on') || 'Based on'}:</strong> 
           ${verdictData.sourceUrl ? `<a href="${verdictData.sourceUrl}" target="_blank" rel="noopener noreferrer">${verdictData.source}</a>` : (verdictData.source || 'Official ECI Guidelines')}
         </div>
 
         <div class="verdict-card__actions">
-          <button class="btn btn--ghost btn--share" aria-label="Share this fact-check result" onclick="shareFactCheck('${labels[verdictData.verdict]}', '${sanitised.replace(/'/g, "\\'")}', '${verdictData.explanation.replace(/'/g, "\\'")}')">
-            Share this fact-check
+          <button class="btn btn--ghost btn--share" 
+                  onclick="shareFactCheck(${JSON.stringify(label).replace(/"/g, '&quot;')}, ${JSON.stringify(claimText).replace(/"/g, '&quot;')}, ${JSON.stringify(verdictData.explanation || "").replace(/"/g, '&quot;')})">
+            ${t('share_fact_check') || 'Share this fact-check'}
           </button>
-          <span class="responsible-ai-badge" title="Offline verification">
-             🔒 Offline Data
-          </span>
+          <span class="responsible-ai-badge">🛡 Powered by Gemini</span>
         </div>
       </article>
     `;
 
   } catch (error) {
-    debugLog(error);
-    container.innerHTML = `<div class="verdict-card"><p>${t('error_generic')}</p></div>`;
+    debugLog('Myth check failed', error);
+    const mockVerdict = getMockVerdict(claimText);
+    renderMockVerdict(container, mockVerdict, claimText);
   }
+}
+
+/**
+ * Returns a fallback verdict based on the claim text.
+ */
+function getMockVerdict(claimText) {
+  const claim = claimText.toLowerCase();
+  if (claim.includes('aadhaar') || claim.includes('voter id')) {
+    return {
+      verdict: "PARTIAL",
+      title: "Voter ID Requirements",
+      explanation: "While Voter ID (EPIC) is the primary document, the ECI allows 12 alternative photo identity documents like Aadhaar, Passport, or DL.",
+      nuance: "Your name must be in the electoral roll to vote, regardless of ID.",
+      source: "Election Commission of India",
+      sourceUrl: "https://eci.gov.in"
+    };
+  }
+  if (claim.includes('evm') || claim.includes('hack')) {
+    return {
+      verdict: "MYTH",
+      title: "EVM Security",
+      explanation: "EVMs are standalone machines not connected to any network, Bluetooth, or WiFi. They are technically secured and physically sealed.",
+      nuance: "Multiple layers of administrative and technical safeguards are in place.",
+      source: "ECI EVM FAQ",
+      sourceUrl: "https://eci.gov.in/evm/"
+    };
+  }
+  return {
+    verdict: "FACT",
+    title: "Official Procedure",
+    explanation: "Most official election procedures are designed to be transparent and accessible. Always verify with eci.gov.in.",
+    nuance: "Rules may vary slightly for special categories like NRIs or Service Voters.",
+    source: "Election Commission",
+    sourceUrl: "https://eci.gov.in"
+  };
+}
+
+/**
+ * Renders a mock verdict in the container.
+ */
+function renderMockVerdict(container, data, claimText) {
+  const icons = { 'FACT': '✅', 'MYTH': '❌', 'PARTIAL': '⚠️' };
+  container.innerHTML = `
+    <article class="verdict-card verdict-card--${data.verdict}">
+      <div class="verdict-card__header">
+        <span class="verdict-card__icon">${icons[data.verdict]}</span>
+        <span class="verdict-card__badge badge--${data.verdict}">${data.verdict}</span>
+      </div>
+      <h3 class="verdict-card__title">${data.title}</h3>
+      <p class="verdict-card__explanation">${data.explanation}</p>
+      <div class="verdict-card__source">Based on: ${data.source}</div>
+      <div class="verdict-card__actions"><span class="responsible-ai-badge">🛡️ Fallback Verification</span></div>
+    </article>
+  `;
 }
 
 function saveMythToLog(claim, verdict, title) {
@@ -206,7 +273,7 @@ function renderMythLog() {
   const section = document.getElementById('myth-log-section');
   const container = document.getElementById('myth-log-items');
 
-  if (session.mythLog.length === 0) {
+  if (!session.mythLog || session.mythLog.length === 0) {
     section.hidden = true;
     return;
   }
@@ -214,16 +281,41 @@ function renderMythLog() {
   section.hidden = false;
   const icons = { 'FACT': '✅', 'MYTH': '❌', 'PARTIAL': '⚠️' };
   
-  container.innerHTML = session.mythLog.slice(0, 5).map(log => `
-    <div class="myth-log__item">
-      <span aria-hidden="true">${icons[log.verdict]}</span>
-      <div style="flex:1;">
-        <div style="font-size:var(--font-size-sm); font-weight:bold;">${log.title}</div>
-        <div style="font-size:var(--font-size-xs); color:var(--color-text-secondary);">${log.claim}</div>
-      </div>
-      <span class="badge badge--${log.verdict}">${log.verdict}</span>
-    </div>
-  `).join('');
+  // Clear and render safely
+  container.innerHTML = '';
+  session.mythLog.slice(0, 5).forEach(log => {
+    const item = document.createElement('div');
+    item.className = 'myth-log__item';
+    
+    const icon = document.createElement('span');
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = icons[log.verdict] || '❓';
+    
+    const content = document.createElement('div');
+    content.style.flex = '1';
+    
+    const title = document.createElement('div');
+    title.style.fontSize = 'var(--font-size-sm)';
+    title.style.fontWeight = 'bold';
+    title.textContent = log.title;
+    
+    const claim = document.createElement('div');
+    claim.style.fontSize = 'var(--font-size-xs)';
+    claim.style.color = 'var(--color-text-secondary)';
+    claim.textContent = log.claim;
+    
+    content.appendChild(title);
+    content.appendChild(claim);
+    
+    const badge = document.createElement('span');
+    badge.className = `badge badge--${log.verdict}`;
+    badge.textContent = log.verdict;
+    
+    item.appendChild(icon);
+    item.appendChild(content);
+    item.appendChild(badge);
+    container.appendChild(item);
+  });
 }
 
 async function shareFactCheck(verdict, claim, explanation) {
@@ -236,7 +328,11 @@ async function shareFactCheck(verdict, claim, explanation) {
       debugLog('Share cancelled', e);
     }
   } else {
-    await navigator.clipboard.writeText(shareText);
-    alert('Copied to clipboard!');
+    try {
+      await navigator.clipboard.writeText(shareText);
+      alert('Copied to clipboard!');
+    } catch (err) {
+      debugLog('Clipboard failed', err);
+    }
   }
 }

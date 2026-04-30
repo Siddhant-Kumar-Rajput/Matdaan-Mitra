@@ -7,6 +7,7 @@
   <meta name="description" content="Your personal election guide for Indian voters">
   <link rel="stylesheet" href="./css/global.css">
   <link rel="stylesheet" href="./css/components.css">
+  <link rel="stylesheet" href="./css/responsive.css">
   <style>
     /* ===== SPLASH SCREEN ===== */
     .splash {
@@ -108,6 +109,14 @@
   </style>
 </head>
 <body>
+  <script>
+    const session = JSON.parse(sessionStorage.getItem('matdaan_session') || '{}');
+    if (!session.language && window.location.pathname !== '/index.html' && window.location.pathname !== '/') {
+      window.location.replace('./index.html');
+    }
+    window.LANG = session.language || 'en';
+    document.documentElement.lang = window.LANG;
+  </script>
   <a href="#main-content" class="skip-link">Skip to main content</a>
 
   <!-- ===== SPLASH SCREEN ===== -->
@@ -170,28 +179,46 @@
     <p class="landing__footer">🛡 Powered by Gemini AI · Politically Neutral · Zero Data Stored</p>
   </main>
 
-  <script src="./js/config.js" defer></script>
-  <script src="./js/session.js" defer></script>
-  <script src="./js/i18n.js" defer></script>
+  <script src="./js/config.js"></script>
+  <script src="./js/session.js"></script>
+  <script src="./js/translate.js"></script>
+  <script src="./js/i18n.js"></script>
+  <script src="./js/gemini.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
+      const splashMsg = document.querySelector('.splash__subtitle');
+      const originalSubtitle = splashMsg.textContent;
+      
+      const startTime = Date.now();
+      
+      const elapsed = Date.now() - startTime;
+      const minSplashTime = 3500;
+      const remaining = Math.max(0, minSplashTime - elapsed);
+
       setTimeout(() => {
         document.getElementById('splash-screen').classList.add('splash--hidden');
         document.querySelector('.landing').classList.add('landing--visible');
-      }, 3000);
+      }, remaining);
     });
 
-    function selectLanguage(code, label) {
-      let isReturning = false;
-      if (typeof setSession === 'function') {
-        const session = getSession();
-        session.language = code;
-        session.languageLabel = label;
-        isReturning = session.onboardingComplete;
-        setSession(session);
-      } else {
-        sessionStorage.setItem('matdaan_session', JSON.stringify({ language: code, languageLabel: label }));
+    async function selectLanguage(code, label, evt) {
+      const e = evt || window.event;
+      if (e) {
+        const btn = e.currentTarget;
+        if (btn) {
+          btn.innerHTML = `<span class="loader__dots"><span></span><span></span><span></span></span>`;
+          btn.disabled = true;
+        }
       }
+
+      // 1. Update language in session
+      updateSession({ 
+        language: code, 
+        languageLabel: label 
+      });
+
+      const session = getSession();
+      const isReturning = session.onboardingComplete;
 
       document.querySelector('.landing').style.opacity = '0';
       setTimeout(() => {

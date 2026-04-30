@@ -2,6 +2,15 @@ node_modules/
 .firebase/
 js/config.js
 
-# OS generated files
+# Environment / secrets
+*.env
+.env.*
+*.pem
+*.key
+
+# Editor artifacts
 .DS_Store
 Thumbs.db
+.vscode/
+*.suo
+*.user

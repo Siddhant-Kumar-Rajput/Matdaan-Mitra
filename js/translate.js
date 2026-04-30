@@ -75,3 +75,59 @@ async function translateTexts(texts, targetLang) {
     return texts;
   }
 }
+
+/**
+ * Automatically translates all untranslated text nodes in the body.
+ * Skips elements with data-i18n attributes as they are handled by i18n.js.
+ */
+async function autoTranslatePage() {
+  const session = getSession();
+  const targetLang = session.language || 'en';
+  if (targetLang === 'en') return;
+
+  const walker = document.createTreeWalker(
+    document.body,
+    NodeFilter.SHOW_TEXT,
+    {
+      acceptNode: (node) => {
+        const parent = node.parentElement;
+        if (!parent) return NodeFilter.FILTER_REJECT;
+        
+        // Skip scripts, styles, and already translated elements
+        const tag = parent.tagName.toLowerCase();
+        if (['script', 'style', 'noscript', 'iframe', 'canvas'].includes(tag)) return NodeFilter.FILTER_REJECT;
+        if (parent.hasAttribute('data-i18n') || parent.closest('[data-i18n]')) return NodeFilter.FILTER_REJECT;
+        if (parent.hasAttribute('data-no-translate')) return NodeFilter.FILTER_REJECT;
+        
+        // Only translate if it contains actual text (not just whitespace)
+        return node.textContent.trim().length > 1 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      }
+    }
+  );
+
+  const nodesToTranslate = [];
+  let currentNode;
+  while (currentNode = walker.nextNode()) {
+    nodesToTranslate.push(currentNode);
+  }
+
+  if (nodesToTranslate.length === 0) return;
+
+  // Split into chunks of 50 to avoid URL length or body size issues
+  const chunkSize = 50;
+  for (let i = 0; i < nodesToTranslate.length; i += chunkSize) {
+    const chunk = nodesToTranslate.slice(i, i + chunkSize);
+    const texts = chunk.map(n => n.textContent.trim());
+    
+    try {
+      const translated = await translateTexts(texts, targetLang);
+      chunk.forEach((node, index) => {
+        if (translated[index]) {
+          node.textContent = translated[index];
+        }
+      });
+    } catch (e) {
+      debugLog('Chunk translation error', e);
+    }
+  }
+}

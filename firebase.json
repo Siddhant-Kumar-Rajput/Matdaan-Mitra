@@ -6,7 +6,15 @@
       "**/.*",
       "**/node_modules/**",
       "**/*.md",
-      "js/config.example.js"
+      "js/config.example.js",
+      "js/config.js",
+      "AGENTS.md",
+      "GEMINI.md",
+      "PROJECT_SPECS.md",
+      "MASTER_UPDATE_V2.md",
+      "news_update.md",
+      "Dockerfile",
+      "nginx.conf"
     ],
     "headers": [
       {
@@ -14,7 +22,7 @@
         "headers": [
           {
             "key": "Content-Security-Policy",
-            "value": "default-src 'self'; connect-src 'self' https://generativelanguage.googleapis.com https://translation.googleapis.com https://factchecktools.googleapis.com; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-src https://www.google.com; img-src 'self' data: https:;"
+            "value": "default-src 'self'; connect-src 'self' https://generativelanguage.googleapis.com https://translation.googleapis.com https://factchecktools.googleapis.com https://maps.googleapis.com; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-src https://www.google.com https://maps.google.com; img-src 'self' data: https://maps.gstatic.com https://maps.googleapis.com; font-src 'self' https://fonts.gstatic.com;"
           },
           {
             "key": "X-Content-Type-Options",
@@ -23,6 +31,22 @@
           {
             "key": "X-Frame-Options",
             "value": "DENY"
+          },
+          {
+            "key": "X-XSS-Protection",
+            "value": "1; mode=block"
+          },
+          {
+            "key": "Referrer-Policy",
+            "value": "strict-origin-when-cross-origin"
+          },
+          {
+            "key": "Permissions-Policy",
+            "value": "geolocation=(), microphone=(), camera=(), payment=(), usb=(), interest-cohort=()"
+          },
+          {
+            "key": "Strict-Transport-Security",
+            "value": "max-age=31536000; includeSubDomains; preload"
           }
         ]
       }

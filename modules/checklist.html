@@ -7,9 +7,18 @@
   <meta name="description" content="Your personal voter checklist">
   <link rel="stylesheet" href="../css/global.css">
   <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/responsive.css">
   <link rel="stylesheet" href="../css/modules.css">
 </head>
 <body>
+  <script>
+    const session = JSON.parse(sessionStorage.getItem('matdaan_session') || '{}');
+    if (!session.language && window.location.pathname !== '/index.html' && window.location.pathname !== '/') {
+      window.location.replace('../index.html');
+    }
+    window.LANG = session.language || 'en';
+    document.documentElement.lang = window.LANG;
+  </script>
   <a href="#main-content" class="skip-link">Skip to main content</a>
   
   <header role="banner" class="app-header">
@@ -145,7 +154,10 @@
 
   <script src="../js/config.js" defer></script>
   <script src="../js/session.js" defer></script>
+  <script src="../js/translate.js" defer></script>
   <script src="../js/i18n.js" defer></script>
+  <script src="../js/loader.js" defer></script>
+  <script src="../js/offline-data.js" defer></script>
   <script src="../js/language-switcher.js" defer></script>
   <script src="../js/gemini.js" defer></script>
   <script src="../js/checklist.js" defer></script>

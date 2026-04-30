@@ -67,22 +67,20 @@ let assistantOpenedOnce = false;
 
 function getWelcomeMessage() {
   const session = getSession();
-  const { constituency, state, isFirstTimeVoter, currentModule } = session;
+  const { isFirstTimeVoter, currentModule, languageLabel } = session;
 
-  const moduleGreetings = {
-    checklist: `I can help you with your voter checklist for ${constituency || state}. What would you like to know?`,
-    timeline: `I can answer questions about any phase of the election process. What would you like to understand better?`,
-    mythbuster: `Have a claim to check, or want to know more about any fact-check result? Ask me.`
-  };
+  const base = isFirstTimeVoter ? t('assistant_welcome_first') : t('assistant_welcome_returning');
+  
+  // Optional: add module context if available in i18n, else skip or translate
+  let moduleContext = '';
+  if (currentModule === 'checklist') moduleContext = `I can help you with your voter checklist.`;
+  else if (currentModule === 'timeline') moduleContext = `I can answer questions about the election process.`;
+  else if (currentModule === 'mythbuster') moduleContext = `I can help you understand these fact-checks better.`;
 
-  const base = isFirstTimeVoter
-    ? `Hello! I'm MatDaan Mitra, your election guide. Since this is your first election, feel free to ask me anything — no question is too basic.`
-    : `Hello! I'm MatDaan Mitra. What election question can I help you with?`;
-
-  return `${base}\n\n${moduleGreetings[currentModule] || ''}`;
+  return `${base}\n\n${moduleContext}`;
 }
 
-function openAssistant() {
+async function openAssistant() {
   const drawer = document.getElementById('assistant-drawer');
   const trigger = document.getElementById('assistant-trigger');
   const backdrop = document.getElementById('assistant-backdrop');
@@ -95,11 +93,12 @@ function openAssistant() {
   if (!assistantOpenedOnce) {
     assistantOpenedOnce = true;
     appendMessage('assistant', getWelcomeMessage());
-    renderSuggestions();
+    await renderSuggestions();
   }
 
   setTimeout(() => {
-    document.getElementById('assistant-input').focus();
+    const input = document.getElementById('assistant-input');
+    if (input) input.focus();
   }, 300);
 }
 
@@ -150,14 +149,15 @@ async function handleSend() {
     let responseText = '';
     
     if (useGrounding) {
-      const data = await callGeminiGrounded(sanitised, 'floating-assistant');
-      responseText = data.text;
+      const data = await callGemini(`${sanitised} (Respond in ${session.languageLabel || 'English'})`, { grounding: true });
+      responseText = data.text || (typeof data === 'string' ? data : '');
       if (data.sources && data.sources.length > 0) {
         responseText += `\n\n**Sources:**\n${data.sources.slice(0, 2).map(s => `- [${s.title}](${s.url})`).join('\n')}`;
       }
-      // Note: we don't push grounded results to history to save tokens and avoid format errors
     } else {
-      responseText = await callGeminiChat(conversationHistory, 'floating-assistant');
+      const chatPrompt = conversationHistory.map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.parts[0].text}`).join('\n\n');
+      const finalPrompt = `${chatPrompt}\n\nIMPORTANT: Respond entirely in ${session.languageLabel || 'English'}. Keep it simple and helpful.`;
+      responseText = await callGemini(finalPrompt);
       conversationHistory.push({ role: 'model', parts: [{ text: responseText }] });
     }
 
@@ -209,10 +209,16 @@ function hideTypingIndicator() {
   if (indicator) indicator.remove();
 }
 
-function renderSuggestions() {
+async function renderSuggestions() {
   const session = getSession();
-  const suggestions = MODULE_SUGGESTIONS[session.currentModule] || MODULE_SUGGESTIONS.timeline;
+  const rawSuggestions = MODULE_SUGGESTIONS[session.currentModule] || MODULE_SUGGESTIONS.timeline;
+  const targetLang = session.language || 'en';
   
+  let suggestions = rawSuggestions;
+  if (targetLang !== 'en' && typeof translateTexts === 'function') {
+    suggestions = await translateTexts(rawSuggestions, targetLang);
+  }
+
   const container = document.getElementById('assistant-messages');
   const suggDiv = document.createElement('div');
   suggDiv.id = 'assistant-suggestions';
@@ -221,8 +227,12 @@ function renderSuggestions() {
   suggDiv.style.gap = 'var(--space-sm)';
   suggDiv.style.marginTop = 'var(--space-md)';
   
-  suggDiv.innerHTML = suggestions.map(s => `
-    <button class="btn btn--ghost btn--sm" style="background:var(--color-surface); border:1px solid var(--color-border);" onclick="triggerSuggestion('${s}')">${s}</button>
+  suggDiv.innerHTML = suggestions.map((s, idx) => `
+    <button class="btn btn--ghost btn--sm" 
+            style="background:var(--color-surface); border:1px solid var(--color-border);" 
+            onclick="triggerSuggestion('${s.replace(/'/g, "\\'")}')">
+      ${s}
+    </button>
   `).join('');
   
   container.appendChild(suggDiv);
