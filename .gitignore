@@ -14,3 +14,7 @@ Thumbs.db
 .vscode/
 *.suo
 *.user
+
+# Markdown files
+*.md
+!README.md
