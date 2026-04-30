@@ -43,14 +43,5 @@ The application follows a structured, context-aware workflow to ensure every use
 
 ---
 
-## 🛠 Project Standards & Documentation
-
-For detailed technical specifications, design tokens, and file structures, please refer to:
-- [PROJECT_SPECS.md](./PROJECT_SPECS.md) - Technical architecture and file mapping.
-- [GEMINI.md](./GEMINI.md) - The AI Agent blueprint and system prompt logic.
-- [AGENTS.md](./AGENTS.md) - Code quality, accessibility, and security rules.
-
----
-
 *MatDaan karo. Apna haq pehchano.* 🗳  
 *Vote. Know your right.*
