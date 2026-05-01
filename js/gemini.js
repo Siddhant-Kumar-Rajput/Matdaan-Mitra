@@ -21,9 +21,9 @@ const REJECTION_MESSAGES = {
 };
 
 function sanitiseInput(raw = '') {
-  if (typeof raw !== 'string') return { isRejected: true, rejectionReason: 'invalid_type' };
+  if (typeof raw !== 'string') return { isRejected: true, rejectionReason: 'invalid_type', ok: false, value: '' };
   const stripped = raw.replace(/<[^>]*>/g, '').trim().slice(0, 500);
-  if (stripped.length < 3) return { isRejected: true, rejectionReason: 'too_short' };
+  if (stripped.length < 3) return { isRejected: true, rejectionReason: 'too_short', ok: false, value: '' };
   const injectionPatterns = [
     /ignore\s+(previous|all|above)\s+instructions/i,
     /forget\s+your\s+(instructions|guidelines)/i,
@@ -31,8 +31,8 @@ function sanitiseInput(raw = '') {
     /pretend\s+(you\s+are|to\s+be)/i,
     /jailbreak|DAN\s+mode|developer\s+mode/i,
   ];
-  if (injectionPatterns.some(p => p.test(stripped))) return { isRejected: true, rejectionReason: 'injection_attempt' };
-  return { isRejected: false, sanitised: stripped };
+  if (injectionPatterns.some(p => p.test(stripped))) return { isRejected: true, rejectionReason: 'injection_attempt', ok: false, value: '' };
+  return { isRejected: false, sanitised: stripped, ok: true, value: stripped };
 }
 
 function buildSystemPrompt() {

@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
          target="_blank" 
          rel="noopener noreferrer"
          class="btn btn--primary btn--calendar"
+         onclick="if(typeof trackCalendarExport === 'function') trackCalendarExport();"
          aria-label="Add voting day to your Google Calendar">
         📅 Add Voting Day to Google Calendar
       </a>

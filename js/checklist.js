@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('current-lang-display').textContent = session.languageLabel || 'English';
   
   await loadChecklist();
+  trackModuleOpen('checklist');
 });
 
 async function loadChecklist() {

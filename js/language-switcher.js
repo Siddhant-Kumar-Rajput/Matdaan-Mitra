@@ -87,6 +87,10 @@ function initLanguageSwitcher() {
     // Update the display text and close dropdown
     toggle.textContent = label;
     dropdown.hidden = true;
+    
+    if (typeof trackLanguageSelected === 'function') {
+      trackLanguageSelected(code);
+    }
 
     // Reload the page to apply new language
     window.location.reload();

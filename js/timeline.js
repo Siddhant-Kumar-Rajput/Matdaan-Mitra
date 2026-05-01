@@ -28,6 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const input = document.getElementById('whatif-input').value;
     if (input) handleWhatIf(input);
   });
+  
+  trackModuleOpen('timeline');
 });
 
 function switchTab(tabId) {
@@ -437,6 +439,7 @@ function showQuizResult() {
       </div>
     </div>
   `;
+  trackQuizCompleted(quizScore, totalQ, passed);
 }
 
 function retryQuiz() {

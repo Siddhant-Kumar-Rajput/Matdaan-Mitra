@@ -23,5 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
     iframe.setAttribute('aria-label', `Map showing ${session.constituency} constituency area`);
     
     container.appendChild(iframe);
+    
+    if (typeof trackMapBoothOpen === 'function') {
+      trackMapBoothOpen();
+    }
   }
 });

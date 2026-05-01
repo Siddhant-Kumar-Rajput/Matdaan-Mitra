@@ -100,6 +100,10 @@ async function openAssistant() {
     const input = document.getElementById('assistant-input');
     if (input) input.focus();
   }, 300);
+  
+  if (typeof trackAssistantUsed === 'function') {
+    trackAssistantUsed();
+  }
 }
 
 window.closeAssistant = function() {

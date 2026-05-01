@@ -154,6 +154,7 @@ JSON Schema:
     const label = t('verdict_' + labelKey) || verdictData.verdict;
 
     saveMythToLog(claimText, verdictData.verdict, verdictData.title || label);
+    trackMythChecked(verdictData.verdict);
 
     container.innerHTML = `
       <article class="verdict-card verdict-card--${verdictData.verdict}" role="article" aria-label="${verdictData.verdict}">
